@@ -36,9 +36,9 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/dashboard': (context) => const DashboardScreen(),
-        '/admin': (context) => const AdminScreen(),
+        '/login': (context) => LoginScreen(),       // <-- HAPUS const
+        '/dashboard': (context) => DashboardScreen(), // <-- HAPUS const
+        '/admin': (context) => AdminScreen(),         // <-- HAPUS const
       },
     );
   }
@@ -59,11 +59,8 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkSession() async {
-    // Kasih delay dikit biar splash screen kelihatan
     await Future.delayed(const Duration(seconds: 2));
-    
     final session = Supabase.instance.client.auth.currentSession;
-    
     if (mounted) {
       if (session != null) {
         Navigator.pushReplacementNamed(context, '/dashboard');
