@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'screens/login_screen.dart';
+import 'screens/dashboard_screen.dart';
+import 'screens/admin_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,13 +33,45 @@ class MyApp extends StatelessWidget {
         ),
         textTheme: GoogleFonts.plusJakartaSansTextTheme(Theme.of(context).textTheme),
       ),
-      home: const SplashScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const SplashScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/dashboard': (context) => const DashboardScreen(),
+        '/admin': (context) => const AdminScreen(),
+      },
     );
   }
 }
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkSession();
+  }
+
+  Future<void> _checkSession() async {
+    // Kasih delay dikit biar splash screen kelihatan
+    await Future.delayed(const Duration(seconds: 2));
+    
+    final session = Supabase.instance.client.auth.currentSession;
+    
+    if (mounted) {
+      if (session != null) {
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      } else {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +92,8 @@ class SplashScreen extends StatelessWidget {
             ),
             const SizedBox(height: 5),
             const Text('PRO VERSION', style: TextStyle(letterSpacing: 4, color: Colors.white54)),
+            const SizedBox(height: 40),
+            const CircularProgressIndicator(color: Color(0xFFF5C451)),
           ],
         ),
       ),
