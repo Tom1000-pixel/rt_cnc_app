@@ -1,3 +1,4 @@
+import 'dart:async'; // <-- Import Timer
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -24,9 +25,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true;
   String _userRole = 'operator';
 
-  // State buat gambar
   List<Map<String, dynamic>> _op1Images = [];
   List<Map<String, dynamic>> _op2Images = [];
+
+  // Timer buat Auto-Sync
+  Timer? _syncTimer;
 
   final Color goldColor = const Color(0xFFF5C451);
   final Color goldDark = const Color(0xFF7A5214);
@@ -37,17 +40,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _initData();
+    // Mulai timer tiap 30 detik
+    _syncTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted) {
+        _fetchDataFromSupabase(isSilent: true);
+        _fetchImages();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _syncTimer?.cancel(); // Matiin timer kalau keluar halaman
+    super.dispose();
   }
 
   Future<void> _initData() async {
     final role = await AuthService.getUserRole();
     setState(() => _userRole = role);
     _fetchDataFromSupabase();
-    _fetchImages(); // Panggil fungsi gambar
+    _fetchImages();
   }
 
-  Future<void> _fetchDataFromSupabase() async {
-    setState(() => _isLoading = true);
+  // isSilent = true artinya nggak nampilin loading spinner (biar nggak kedip)
+  Future<void> _fetchDataFromSupabase({bool isSilent = false}) async {
+    if (!isSilent) setState(() => _isLoading = true);
+    
     try {
       final supabase = Supabase.instance.client;
       final response = await supabase
@@ -62,17 +80,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       setState(() {
         _allData = data;
         _availableTypes = types;
-        _selectedMaster = null;
-        _selectedTarget = null;
+        if (!isSilent) {
+          // Cuma reset pilihan kalau ini bukan auto-sync
+          _selectedMaster = null;
+          _selectedTarget = null;
+        }
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal memuat data: $e')));
+      if (!isSilent) setState(() => _isLoading = false);
+      if (mounted && !isSilent) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal memuat data: $e')));
     }
   }
 
-  // Fungsi narik gambar dari Supabase
   Future<void> _fetchImages() async {
     try {
       final res = await Supabase.instance.client
@@ -187,7 +207,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildPlaqueItem(Icons.cloud_done, 'Online', Colors.greenAccent, true),
+          _buildPlaqueItem(Icons.cloud_done, 'Auto-Sync', Colors.greenAccent, true), // Ganti teks jadi Auto-Sync
           Container(width: 1, height: 30, color: goldColor.withOpacity(0.2)),
           _buildPlaqueItem(Icons.sync, '14:14', Colors.blueAccent, false),
           Container(width: 1, height: 30, color: goldColor.withOpacity(0.2)),
@@ -245,7 +265,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onChanged: (val) {
               setState(() => _activeLine = val!);
               _fetchDataFromSupabase();
-              _fetchImages(); // Refresh gambar pas ganti line
+              _fetchImages();
             },
             baseColor: goldColor,
           ),
@@ -278,6 +298,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onPressed: () {
                 _fetchDataFromSupabase();
                 _fetchImages();
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data berhasil disegarkan!'), duration: Duration(seconds: 1)));
               },
               icon: const Icon(Icons.refresh, color: Colors.black),
               label: const Text('SEGARKAN CLOUD', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900, letterSpacing: 1)),
@@ -447,7 +468,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Text('SELISIH $title', style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
               Row(
                 children: [
-                  // Tombol Lihat Gambar (Cuma muncul kalau ada gambar)
                   if (images.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(right: 8.0),
@@ -513,7 +533,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Dialog buat nampilin gambar
   void _showImageDialog(List<Map<String, dynamic>> images, String opTitle) {
     showDialog(
       context: context,
