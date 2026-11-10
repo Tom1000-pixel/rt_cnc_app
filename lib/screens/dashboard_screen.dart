@@ -28,7 +28,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final Color goldDark = const Color(0xFF7A5214);
   final Color bgColor = const Color(0xFF070B1C);
   final Color cardColor = const Color(0xFF0E1738);
-  final Color textMuted = const Color(0xFF748096);
 
   @override
   void initState() {
@@ -84,7 +83,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: 20),
                   _buildGoldPlaque(),
                   const SizedBox(height: 24),
-                  _buildLineSelectorPanel(), // UI masih sederhana, nanti kita poles
+                  _buildLineSelectorPanel(),
                   const SizedBox(height: 16),
                   _buildChipRepairPanel(),
                   const SizedBox(height: 24),
@@ -96,14 +95,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // 1. HEADER PRESISI (Logo Hexagon & Font Cinzel/Montserrat)
   Widget _buildPremiumHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
-            // Logo Hexagon
             CustomPaint(
               size: const Size(50, 55),
               painter: HexagonPainter(goldColor, goldDark),
@@ -152,7 +149,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // 2. PLAKAT STATUS EMAS (Custom Shape & Border Gradient)
   Widget _buildGoldPlaque() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -193,35 +189,119 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // SEMENTARA PAKAI UI SIMPEL DULU (Nanti kita poles satu-satu)
   Widget _buildLineSelectorPanel() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: goldColor.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: goldColor.withOpacity(0.3), width: 1.5),
+        boxShadow: [
+          BoxShadow(color: goldColor.withOpacity(0.05), blurRadius: 20, spreadRadius: 2),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Pilihan Garis Produksi', style: TextStyle(color: goldColor, fontSize: 16, fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              const Icon(Icons.settings_input_component, color: Color(0xFFF5C451), size: 24),
+              const SizedBox(width: 12),
+              Text('Pilihan Garis Produksi', style: TextStyle(color: goldColor, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Divider(color: goldColor.withOpacity(0.2)),
           const SizedBox(height: 16),
-          DropdownButtonFormField<int>(
+          
+          _buildDropdownLabel('LINE'),
+          _buildCustomDropdown<int>(
             value: _activeLine,
-            dropdownColor: cardColor,
-            style: TextStyle(color: goldColor, fontWeight: FontWeight.bold, fontSize: 18),
-            decoration: InputDecoration(
-              filled: true, fillColor: Colors.black26,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-            ),
             items: [1, 2, 3, 4].map((l) => DropdownMenuItem(value: l, child: Text('LINE $l'))).toList(),
             onChanged: (val) {
               setState(() => _activeLine = val!);
               _fetchDataFromSupabase();
             },
+            baseColor: goldColor,
           ),
+          const SizedBox(height: 16),
+
+          _buildDropdownLabel('Tipe Master (Referensi)'),
+          _buildCustomDropdown<String>(
+            value: _selectedMaster,
+            hint: 'Pilih Tipe Master...',
+            items: _availableTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+            onChanged: (val) => setState(() => _selectedMaster = val),
+            baseColor: const Color(0xFF3B82F6), // Biru
+          ),
+          const SizedBox(height: 16),
+
+          _buildDropdownLabel('Tipe Target (Analisis)'),
+          _buildCustomDropdown<String>(
+            value: _selectedTarget,
+            hint: 'Pilih Tipe Target...',
+            items: _availableTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+            onChanged: (val) => setState(() => _selectedTarget = val),
+            baseColor: const Color(0xFFA855F7), // Ungu
+          ),
+          const SizedBox(height: 24),
+
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: _fetchDataFromSupabase,
+              icon: const Icon(Icons.refresh, color: Colors.black),
+              label: const Text('SEGARKAN CLOUD', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900, letterSpacing: 1)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: goldColor,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 5,
+                shadowColor: goldColor.withOpacity(0.5),
+              ),
+            ),
+          )
         ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6, left: 4),
+      child: Text(text, style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+    );
+  }
+
+  Widget _buildCustomDropdown<T>({
+    required T? value,
+    required List<DropdownMenuItem<T>> items,
+    required Function(T?) onChanged,
+    required Color baseColor,
+    String? hint,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: baseColor.withOpacity(0.5), width: 1.5),
+        boxShadow: [
+          BoxShadow(color: baseColor.withOpacity(0.1), blurRadius: 10),
+        ],
+      ),
+      child: DropdownButtonFormField<T>(
+        value: value,
+        dropdownColor: cardColor,
+        icon: Icon(Icons.arrow_drop_down, color: baseColor),
+        style: TextStyle(color: baseColor, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 0.5),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          hintText: hint,
+          hintStyle: TextStyle(color: baseColor.withOpacity(0.4), fontSize: 14),
+        ),
+        items: items,
+        onChanged: onChanged,
       ),
     );
   }
@@ -233,25 +313,153 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: const Color(0xFF1B0A3A),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.purpleAccent.withOpacity(0.3)),
+        boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.1), blurRadius: 15)],
       ),
-      child: Row(
+      child: Column(
         children: [
-          const Icon(Icons.memory, color: Colors.purpleAccent, size: 30),
-          const SizedBox(width: 10),
-          const Expanded(child: Text('CHIP REPAIR', style: TextStyle(color: Colors.purpleAccent, fontWeight: FontWeight.bold))),
-          Switch(value: _chipEnabled, activeColor: Colors.purpleAccent, onChanged: (v) => setState(() => _chipEnabled = v)),
+          Row(
+            children: [
+              const Icon(Icons.memory, color: Colors.purpleAccent, size: 30),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text('CHIP REPAIR — TR404 SUMBU X OP2', 
+                  style: TextStyle(color: Colors.purpleAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+              ),
+              Switch(
+                value: _chipEnabled,
+                activeColor: Colors.purpleAccent,
+                onChanged: (val) => setState(() => _chipEnabled = val),
+              )
+            ],
+          ),
+          if (_chipEnabled) ...[
+            const SizedBox(height: 10),
+            DropdownButtonFormField<String>(
+              value: _chipCondition,
+              dropdownColor: const Color(0xFF1B0A3A),
+              style: const TextStyle(color: Colors.purpleAccent, fontWeight: FontWeight.bold),
+              decoration: InputDecoration(
+                filled: true, fillColor: Colors.black26,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'baru', child: Text('Chip Baru')),
+                DropdownMenuItem(value: 'r1', child: Text('Repair 1x')),
+                DropdownMenuItem(value: 'r2', child: Text('Repair 2x')),
+                DropdownMenuItem(value: 'r3', child: Text('Repair 3x')),
+                DropdownMenuItem(value: 'r4', child: Text('Repair 4x (Setting Awal)')),
+              ],
+              onChanged: (val) => setState(() => _chipCondition = val!),
+            ),
+          ]
         ],
       ),
     );
   }
 
   Widget _buildComparisonPanels() {
-    // Logika persis kayak sebelumnya
-    return const Center(child: Text('Panel Selisih (Siap dipoles)', style: TextStyle(color: Colors.white54)));
+    final masterData = _allData.where((d) => d.type == _selectedMaster).toList();
+    final targetData = _allData.where((d) => d.type == _selectedTarget).toList();
+
+    List<Map<String, dynamic>> op1List = [];
+    List<Map<String, dynamic>> op2List = [];
+
+    if (_selectedMaster != null && _selectedTarget != null) {
+      for (var m1 in masterData) {
+        final m2 = targetData.firstWhere(
+          (x) => x.tool == m1.tool && x.op == m1.op, 
+          orElse: () => OffsetItem(id: '', line: 0, type: '', op: '', tool: '', x: 0, z: 0)
+        );
+        
+        if (m2.id.isNotEmpty) {
+          final dx = (m2.x - m1.x);
+          final dz = (m2.z - m1.z);
+          
+          if (dx != 0 || dz != 0) {
+            final opStr = m1.op.toUpperCase();
+            final item = {
+              'tool': m1.tool,
+              'op': m1.op,
+              'dx': dx > 0 ? '+${dx.toStringAsFixed(3)}' : dx.toStringAsFixed(3),
+              'dz': dz > 0 ? '+${dz.toStringAsFixed(3)}' : dz.toStringAsFixed(3),
+              'sev': dx.abs() > 0.05 || dz.abs() > 0.05 ? 2 : 1,
+            };
+            
+            if (opStr.contains('1')) {
+              op1List.add(item);
+            } else {
+              op2List.add(item);
+            }
+          }
+        }
+      }
+    }
+
+    return Column(
+      children: [
+        _buildOpCard('OP 1', Colors.blueAccent, op1List),
+        const SizedBox(height: 16),
+        _buildOpCard('OP 2', goldColor, op2List),
+      ],
+    );
+  }
+
+  Widget _buildOpCard(String title, Color color, List<Map<String, dynamic>> items) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('SELISIH $title', style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: Text('${items.length} ITEM', style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+              )
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (items.isEmpty)
+            const Text('Tidak ada selisih / data belum dipilih', style: TextStyle(color: Colors.white38, fontSize: 12))
+          else
+            ...items.map((item) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 4, height: 40,
+                    decoration: BoxDecoration(
+                      color: item['sev'] == 2 ? Colors.redAccent : Colors.amber,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${item['tool']} (${item['op']})', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text('X: ${item['dx']}  |  Z: ${item['dz']}', 
+                          style: TextStyle(color: item['sev'] == 2 ? Colors.redAccent : Colors.amber, fontSize: 12, fontFamily: 'monospace')),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ))
+        ],
+      ),
+    );
   }
 }
 
-// CLASS CUSTOM PAINTER BUAT LOGO HEXAGON
 class HexagonPainter extends CustomPainter {
   final Color goldColor;
   final Color goldDark;
@@ -268,7 +476,6 @@ class HexagonPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
     
-    // Gambar bentuk hexagon
     path.moveTo(w * 0.5, 0);
     path.lineTo(w, h * 0.25);
     path.lineTo(w, h * 0.75);
@@ -277,7 +484,6 @@ class HexagonPainter extends CustomPainter {
     path.lineTo(0, h * 0.25);
     path.close();
 
-    // Efek Glow
     final glowPaint = Paint()
       ..color = goldColor.withOpacity(0.5)
       ..style = PaintingStyle.stroke
