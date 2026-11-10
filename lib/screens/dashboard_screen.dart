@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/offset_model.dart';
 import '../services/auth_service.dart';
 import '../widgets/deviation_gauge.dart';
+import 'mailbox_screen.dart'; // Import layar mailbox
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -112,7 +113,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: 24),
                   _buildComparisonPanels(),
                   const SizedBox(height: 24),
-                  _buildMatrixPanel(), // <-- Panel Matrix Baru
+                  _buildMatrixPanel(),
                 ],
               ),
             ),
@@ -146,6 +147,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         Row(
           children: [
+            // Ikon Mailbox
+            IconButton(
+              icon: const Icon(Icons.mail_outline, color: Colors.white54),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MailboxScreen())),
+            ),
             if (_userRole == 'admin')
               IconButton(icon: const Icon(Icons.admin_panel_settings, color: Color(0xFFF5C451)), onPressed: () => Navigator.pushNamed(context, '/admin')),
             IconButton(
@@ -278,7 +284,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1B0A3A), // Background ungu gelap
+        color: const Color(0xFF1B0A3A),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.purpleAccent.withOpacity(0.4), width: 1.5),
         boxShadow: [BoxShadow(color: Colors.purpleAccent.withOpacity(0.15), blurRadius: 20, spreadRadius: 1)],
@@ -394,12 +400,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ─── MATRIX PANEL BARU ───
   Widget _buildMatrixPanel() {
     if (_selectedMaster == null || _selectedTarget == null) {
       return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
+        width: double.infinity, padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(20), border: Border.all(color: goldColor.withOpacity(0.2))),
         child: const Center(child: Text('Pilih Master & Target untuk melihat Matriks', style: TextStyle(color: Colors.white38, fontSize: 12))),
       );
@@ -423,11 +427,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: goldColor.withOpacity(0.3), width: 1.5),
-      ),
+      decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(20), border: Border.all(color: goldColor.withOpacity(0.3), width: 1.5)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -437,8 +437,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             scrollDirection: Axis.horizontal,
             child: DataTable(
               headingRowColor: MaterialStateProperty.all(Colors.white.withOpacity(0.05)),
-              dataRowMinHeight: 40,
-              dataRowMaxHeight: 50,
+              dataRowMinHeight: 40, dataRowMaxHeight: 50,
               columns: const [
                 DataColumn(label: Text('TOOL', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold))),
                 DataColumn(label: Text('M: X', style: TextStyle(color: Colors.blueAccent, fontSize: 10))),
