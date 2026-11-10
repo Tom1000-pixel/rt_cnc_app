@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/offset_model.dart';
 import '../services/auth_service.dart';
+import '../widgets/deviation_gauge.dart'; // <-- Import Widget Baru
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -23,7 +24,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true;
   String _userRole = 'operator';
 
-  // Warna Tema (Presisi dari HTML)
   final Color goldColor = const Color(0xFFF5C451);
   final Color goldDark = const Color(0xFF7A5214);
   final Color bgColor = const Color(0xFF070B1C);
@@ -232,7 +232,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             hint: 'Pilih Tipe Master...',
             items: _availableTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
             onChanged: (val) => setState(() => _selectedMaster = val),
-            baseColor: const Color(0xFF3B82F6), // Biru
+            baseColor: const Color(0xFF3B82F6),
           ),
           const SizedBox(height: 16),
 
@@ -242,7 +242,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             hint: 'Pilih Tipe Target...',
             items: _availableTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
             onChanged: (val) => setState(() => _selectedTarget = val),
-            baseColor: const Color(0xFFA855F7), // Ungu
+            baseColor: const Color(0xFFA855F7),
           ),
           const SizedBox(height: 24),
 
@@ -285,9 +285,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: Colors.black.withOpacity(0.3),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: baseColor.withOpacity(0.5), width: 1.5),
-        boxShadow: [
-          BoxShadow(color: baseColor.withOpacity(0.1), blurRadius: 10),
-        ],
+        boxShadow: [BoxShadow(color: baseColor.withOpacity(0.1), blurRadius: 10)],
       ),
       child: DropdownButtonFormField<T>(
         value: value,
@@ -408,9 +406,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: cardColor.withOpacity(0.8), // Sedikit transparan (glassmorphism)
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+        boxShadow: [BoxShadow(color: color.withOpacity(0.05), blurRadius: 15)],
       ),
       child: Column(
         children: [
@@ -420,34 +419,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Text('SELISIH $title', style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
                 child: Text('${items.length} ITEM', style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
               )
             ],
           ),
           const SizedBox(height: 16),
           if (items.isEmpty)
-            const Text('Tidak ada selisih / data belum dipilih', style: TextStyle(color: Colors.white38, fontSize: 12))
+            const Text('Semua nilai identik / data belum dipilih', style: TextStyle(color: Colors.white38, fontSize: 12))
           else
             ...items.map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.only(bottom: 12),
               child: Row(
                 children: [
+                  // Indikator warna pinggir
                   Container(
-                    width: 4, height: 40,
+                    width: 3, height: 45,
                     decoration: BoxDecoration(
-                      color: item['sev'] == 2 ? Colors.redAccent : Colors.amber,
+                      color: item['sev'] == 2 ? const Color(0xFFFB7185) : const Color(0xFFFBBF24),
                       borderRadius: BorderRadius.circular(2),
+                      boxShadow: [BoxShadow(color: item['sev'] == 2 ? Colors.redAccent : Colors.amber, blurRadius: 5)],
                     ),
                   ),
                   const SizedBox(width: 12),
+                  // Nama Tool & OP
                   Expanded(
+                    flex: 3,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('${item['tool']} (${item['op']})', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                        Text('X: ${item['dx']}  |  Z: ${item['dz']}', 
-                          style: TextStyle(color: item['sev'] == 2 ? Colors.redAccent : Colors.amber, fontSize: 12, fontFamily: 'monospace')),
+                        Text(item['tool'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
+                        Text(item['op'], style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                  // Gauge Bar
+                  Expanded(
+                    flex: 4,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        DeviationGauge(label: 'DEV X', value: item['dx']),
+                        const SizedBox(width: 12),
+                        DeviationGauge(label: 'DEV Z', value: item['dz']),
                       ],
                     ),
                   )
